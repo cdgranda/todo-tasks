@@ -2,7 +2,24 @@ var mongoose = require("mongoose");
 var express = require("express");
 var TaskModel = require('./task_schema');
 var router = express.Router();
-var query = "mongodb+srv://cdgrandaq:familia2848@cluster0.uetp8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+
+let environment = null;
+
+if (!process.env.ON_HEROKU) {
+    console.log("Cargando variables de entorno desde archivo");
+    const env = require('node-env-file');
+    env(__dirname + '/.env');
+}
+
+environment = {
+    DBMONGOUSER: process.env.DBMONGOUSER,
+    DBMONGOPASS: process.env.DBMONGOPASS,
+    DBMONGOSERV: process.env.DBMONGOSERV,
+    DBMONGO: process.env.DBMONGO,
+};
+
+var query = 'mongodb+srv://' + environment.DBMONGOUSER + ':' + environment.DBMONGOPASS + '@' + environment.DBMONGOSERV + '/' + environment.DBMONGO + '?retryWrites=true&w=majority';
+
 const db = (query);
 
 mongoose.Promise = global.Promise;
@@ -17,7 +34,10 @@ mongoose.connect(db, {
         console.log("Se ha conectado con la base de datos exitosamente");
     }
 });
-
+/* Crear una tarea. (Curiosamente no puedo modificar la fecha ni el nombre
+    {"TaskId": 123, "Cristhian Granda":"Estoy atrazadísimo!!!", "Deadline": "2020-28-02"} pues me salta un 
+    error interno, debo dejarlo original, pegarlo en el Postman, porque no me funciona el Curl.)
+*/
 router.post('/create-task', function (req, res) {
     let task_id = req.body.TaskId;
     let name = req.body.Name;
@@ -41,6 +61,7 @@ router.post('/create-task', function (req, res) {
     });
 });
 
+// Consultar todas las tareas
 router.get('/all-tasks', function (req, res) {
     TaskModel.find(function (err, data) {
         if (err) {
@@ -52,6 +73,7 @@ router.get('/all-tasks', function (req, res) {
     });
 });
 
+// Actualizar una tarea.
 router.post('/update-task', function (req, res) {
     TaskModel.updateOne({ TaskId: req.body.TaskId }, {
         Name: req.body.Name,
@@ -65,6 +87,7 @@ router.post('/update-task', function (req, res) {
     });
 });
 
+//Eliminar una tarea
 router.delete('/delete-task', function (req, res) {
     TaskModel.deleteOne({ TaskId: req.body.TaskId }, function (err, data) {
         if (err) {
